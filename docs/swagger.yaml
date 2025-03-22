@@ -1,0 +1,139 @@
+definitions:
+  controller.VerifyRequest:
+    description: This is used for the request body of /verify
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      signature:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /decrypt:
+    post:
+      consumes:
+      - application/json
+      description: Decrypts the Base64 encoded values in the object at depth 1.
+      parameters:
+      - description: Data to decrypt
+        in: body
+        name: data
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Decrypted data
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid JSON
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Decrypts the given data
+      tags:
+      - Encryption
+  /encrypt:
+    post:
+      consumes:
+      - application/json
+      description: Encrypts the values of the object at a depth of 1 using Base64
+        encoding.
+      parameters:
+      - description: Data to encrypt
+        in: body
+        name: data
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Encrypted data
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid JSON
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Encrypts the given data
+      tags:
+      - Encryption
+  /sign:
+    post:
+      consumes:
+      - application/json
+      description: Computes an HMAC signature using the provided data and a secret
+        key.
+      parameters:
+      - description: Data to sign
+        in: body
+        name: data
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Signature
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid JSON
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Generates a cryptographic signature for the given data
+      tags:
+      - Signing
+  /verify:
+    post:
+      consumes:
+      - application/json
+      description: Verifies if the provided HMAC signature matches the computed signature
+        for the data.
+      parameters:
+      - description: Signature verification request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/controller.VerifyRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Signature is valid
+        "400":
+          description: Invalid JSON or Invalid signature
+          schema:
+            type: string
+      summary: Verifies the provided signature for the given data
+      tags:
+      - Signing
+swagger: "2.0"
