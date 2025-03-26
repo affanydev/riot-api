@@ -1,4 +1,4 @@
-package tools
+package service
 
 type Encryptor interface {
 	Encrypt(data map[string]interface{}) (map[string]interface{}, error)

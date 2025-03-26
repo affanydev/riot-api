@@ -12,6 +12,10 @@ type HMACSigner struct {
 	SecretKey []byte
 }
 
+func NewHMACSigner(key []byte) *HMACSigner {
+	return &HMACSigner{SecretKey: key}
+}
+
 func (s *HMACSigner) Sign(data map[string]interface{}) (string, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {

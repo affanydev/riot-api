@@ -11,14 +11,21 @@ import (
 )
 
 type AESEncryptor struct {
-	key []byte
+	aead cipher.AEAD
 }
 
 func NewAESEncryptor(key []byte) (*AESEncryptor, error) {
-	if len(key) != 32 {
-		return nil, errors.New("key must be 32 bytes for AES-256")
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
 	}
-	return &AESEncryptor{key: key}, nil
+
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AESEncryptor{aead: aead}, nil
 }
 
 func (e *AESEncryptor) Encrypt(data map[string]interface{}) (map[string]interface{}, error) {
@@ -66,37 +73,18 @@ func (e *AESEncryptor) Decrypt(data map[string]interface{}) (map[string]interfac
 }
 
 func (e *AESEncryptor) encryptAES(plaintext []byte) (string, error) {
-	block, err := aes.NewCipher(e.key)
-	if err != nil {
-		return "", err
-	}
 
 	nonce := make([]byte, 12) // 12 bytes for GCM nonce
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", err
 	}
 
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return "", err
-	}
-
-	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+	ciphertext := e.aead.Seal(nonce, nonce, plaintext, nil)
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 func (e *AESEncryptor) decryptAES(ciphertext string) ([]byte, error) {
 	decoded, err := base64.StdEncoding.DecodeString(ciphertext)
-	if err != nil {
-		return nil, err
-	}
-
-	block, err := aes.NewCipher(e.key)
-	if err != nil {
-		return nil, err
-	}
-
-	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +96,7 @@ func (e *AESEncryptor) decryptAES(ciphertext string) ([]byte, error) {
 	nonce := decoded[:12]
 	encryptedText := decoded[12:]
 
-	plaintext, err := gcm.Open(nil, nonce, encryptedText, nil)
+	plaintext, err := e.aead.Open(nil, nonce, encryptedText, nil)
 	if err != nil {
 		return nil, err
 	}

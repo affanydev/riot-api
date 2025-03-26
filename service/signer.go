@@ -1,4 +1,4 @@
-package tools
+package service
 
 type Signer interface {
 	Sign(data map[string]interface{}) (string, error)

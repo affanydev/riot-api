@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 func TestHMACSigner_Sign(t *testing.T) {
 	// Prepare
 	secretKey := []byte(SIGNING_KEY_TEST_1)
-	signer := &HMACSigner{SecretKey: secretKey}
+	signer := NewHMACSigner(secretKey)
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": "value2",
@@ -44,7 +44,7 @@ func TestHMACSigner_Sign(t *testing.T) {
 func TestHMACSigner_Sign_InvalidJSON(t *testing.T) {
 	// Prepare
 	secretKey := []byte(SIGNING_KEY_TEST_1)
-	signer := &HMACSigner{SecretKey: secretKey}
+	signer := NewHMACSigner(secretKey)
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": func() {},
@@ -63,7 +63,7 @@ func TestHMACSigner_Sign_InvalidJSON(t *testing.T) {
 func TestHMACSigner_Verify_Positive(t *testing.T) {
 	// Prepare
 	secretKey := []byte(SIGNING_KEY_TEST_1)
-	signer := &HMACSigner{SecretKey: secretKey}
+	signer := NewHMACSigner(secretKey)
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": "value2",
@@ -88,7 +88,7 @@ func TestHMACSigner_Verify_Positive(t *testing.T) {
 func TestHMACSigner_Verify_Wrong_Data(t *testing.T) {
 	// Prepare
 	secretKey := []byte(SIGNING_KEY_TEST_1)
-	signer := &HMACSigner{SecretKey: secretKey}
+	signer := NewHMACSigner(secretKey)
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": "value2",
@@ -120,8 +120,8 @@ func TestHMACSigner_Verify_Wrong_Signature(t *testing.T) {
 	// Prepare
 	secretKey1 := []byte(SIGNING_KEY_TEST_1)
 	secretKey2 := []byte(SIGNING_KEY_TEST_2)
-	signer1 := &HMACSigner{SecretKey: secretKey1}
-	signer2 := &HMACSigner{SecretKey: secretKey2}
+	signer1 := NewHMACSigner(secretKey1)
+	signer2 := NewHMACSigner(secretKey2)
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": "value2",
@@ -146,7 +146,7 @@ func TestHMACSigner_Verify_Wrong_Signature(t *testing.T) {
 func TestHMACSigner_Verify_InvalidJSON(t *testing.T) {
 	// Prepare
 	secretKey1 := []byte(SIGNING_KEY_TEST_1)
-	signer1 := &HMACSigner{SecretKey: secretKey1}
+	signer1 := NewHMACSigner(secretKey1)
 	signature1 := "data-for-signature-1"
 	data := map[string]interface{}{
 		"key1": "value1",

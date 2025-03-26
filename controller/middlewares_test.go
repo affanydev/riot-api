@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"riot-api/tools"
 	"testing"
 
 	"github.com/didip/tollbooth/v7"
@@ -15,7 +17,6 @@ import (
 func TestOptionsRequest(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/encrypt", Encrypt)
 
 	req, _ := http.NewRequest(http.MethodOptions, "/encrypt", nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -37,8 +38,11 @@ func TestRateLimiter(t *testing.T) {
 	router := gin.Default()
 	router.Use(Cors)
 	router.Use(RateLimiter(rateLimiter))
+	signer := tools.NewHMACSigner([]byte(os.Getenv("SIGNING_KEY")))
+	encryptor := tools.NewBase64Encryptor()
+	cryptoController := NewCryptoController(signer, encryptor)
 
-	router.POST("/encrypt", Encrypt)
+	router.POST("/encrypt", cryptoController.Encrypt)
 
 	// should pass
 	w := performRequest(router, "POST", "/encrypt", bytes.NewBuffer([]byte("{\"key1\": \"value1\"}")))

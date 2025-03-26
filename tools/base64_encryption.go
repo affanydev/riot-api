@@ -8,6 +8,10 @@ import (
 
 type Base64Encryptor struct{}
 
+func NewBase64Encryptor() *Base64Encryptor {
+	return &Base64Encryptor{}
+}
+
 func (e *Base64Encryptor) Encrypt(data map[string]interface{}) (map[string]interface{}, error) {
 	encryptedData := make(map[string]interface{})
 

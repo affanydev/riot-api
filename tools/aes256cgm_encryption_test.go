@@ -207,11 +207,8 @@ func TestDecrypt_ErrorCreatingAESCipher(t *testing.T) {
 
 	t.Run("error creating AES cipher", func(t *testing.T) {
 		invalidKey := []byte("shortkey")
-		encryptor := &AESEncryptor{key: invalidKey}
-		ciphertext := "J/a10ovTagsgHo+3LmbMNmy5wDE/7JWiFQTR1gs9Q0IDIFx6iybyyblR"
-		plaintext, err := encryptor.decryptAES(ciphertext)
+		_, err := NewAESEncryptor(invalidKey)
 		assert.Error(t, err)
-		assert.Nil(t, plaintext)
 	})
 
 }

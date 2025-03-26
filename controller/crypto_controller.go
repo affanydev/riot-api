@@ -1,11 +1,8 @@
 package controller
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 	"riot-api/service"
-	"riot-api/tools"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,25 +10,20 @@ import (
 // VerifyRequest defines the struct for the signature verification request.
 // @Description This is used for the request body of /verify
 type VerifyRequest struct {
-	Signature string                 `json:"signature"`
-	Data      map[string]interface{} `json:"data"`
+	Signature string                 `json:"signature" binding:"required"`
+	Data      map[string]interface{} `json:"data" binding:"required"`
 }
 
-var (
-	encryptor tools.Encryptor
-	signer    tools.Signer
-)
+type CryptoController struct {
+	signer    service.Signer
+	encryptor service.Encryptor
+}
 
-func Init() error {
-	signingKey := os.Getenv("SIGNING_KEY")
-	if signingKey == "" {
-		return fmt.Errorf("SIGNING_KEY environment variable is not set")
+func NewCryptoController(signer service.Signer, encryptor service.Encryptor) *CryptoController {
+	return &CryptoController{
+		signer:    signer,
+		encryptor: encryptor,
 	}
-
-	encryptor = &tools.Base64Encryptor{}
-	signer = &tools.HMACSigner{SecretKey: []byte(signingKey)}
-
-	return nil
 }
 
 // Encrypt godoc
@@ -45,7 +37,7 @@ func Init() error {
 // @Failure 400 {string} string "Invalid JSON"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /encrypt [post]
-func Encrypt(c *gin.Context) {
+func (cc *CryptoController) Encrypt(c *gin.Context) {
 	var payload map[string]interface{}
 
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -53,7 +45,7 @@ func Encrypt(c *gin.Context) {
 		return
 	}
 
-	encryptedData, err := service.EncryptPayload(encryptor, payload)
+	encryptedData, err := service.EncryptPayload(cc.encryptor, payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -73,7 +65,7 @@ func Encrypt(c *gin.Context) {
 // @Failure 400 {string} string "Invalid JSON"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /decrypt [post]
-func Decrypt(c *gin.Context) {
+func (cc *CryptoController) Decrypt(c *gin.Context) {
 	var payload map[string]interface{}
 
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -81,7 +73,7 @@ func Decrypt(c *gin.Context) {
 		return
 	}
 
-	decryptedData, err := service.DecryptPayload(encryptor, payload)
+	decryptedData, err := service.DecryptPayload(cc.encryptor, payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -101,7 +93,7 @@ func Decrypt(c *gin.Context) {
 // @Failure 400 {string} string "Invalid JSON"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router /sign [post]
-func Sign(c *gin.Context) {
+func (cc *CryptoController) Sign(c *gin.Context) {
 	var payload map[string]interface{}
 
 	if err := c.ShouldBindJSON(&payload); err != nil {
@@ -109,7 +101,7 @@ func Sign(c *gin.Context) {
 		return
 	}
 
-	signature, err := service.SignPayload(signer, payload)
+	signature, err := service.SignPayload(cc.signer, payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -127,7 +119,7 @@ func Sign(c *gin.Context) {
 // @Success 204 "Signature is valid"
 // @Failure 400 {string} string "Invalid JSON or Invalid signature"
 // @Router /verify [post]
-func Verify(c *gin.Context) {
+func (cc *CryptoController) Verify(c *gin.Context) {
 	var request VerifyRequest
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -135,7 +127,7 @@ func Verify(c *gin.Context) {
 		return
 	}
 
-	verified := service.VerifySignature(signer, request.Data, request.Signature)
+	verified := service.VerifySignature(cc.signer, request.Data, request.Signature)
 
 	if verified {
 		c.Status(http.StatusNoContent)

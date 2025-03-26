@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
 	"riot-api/controller"
+	"riot-api/tools"
 
 	_ "riot-api/docs"
 
@@ -15,27 +17,41 @@ import (
 )
 
 func main() {
+	setupEnv()
+	cryptoController := initCryptoController()
+	r := setupRouter(cryptoController)
+	r.Run(":8022")
+}
 
-	err := godotenv.Load(".env")
-	if err != nil {
+func setupEnv() {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Fatalf("Error loading .env file")
 	}
 
-	if err := controller.Init(); err != nil {
-		log.Fatalf("Failed to initialize controller: %v", err)
+	if os.Getenv("SIGNING_KEY") == "" {
+		log.Fatalf("SIGNING_KEY environment variable is not set")
 	}
+}
 
+func initCryptoController() *controller.CryptoController {
+	signer := tools.NewHMACSigner([]byte(os.Getenv("SIGNING_KEY")))
+	encryptor := tools.NewBase64Encryptor()
+	return controller.NewCryptoController(signer, encryptor)
+}
+
+func setupRouter(cryptoController *controller.CryptoController) *gin.Engine {
 	r := gin.Default()
-	rateLimiter := tollbooth.NewLimiter(10, nil) // limit user (IP) at 10 req/sec
+	rateLimiter := tollbooth.NewLimiter(1000, nil)
+
 	r.Use(controller.Cors)
 	r.Use(controller.RateLimiter(rateLimiter))
 
-	// Routes
-	r.POST("/encrypt", controller.Encrypt)
-	r.POST("/decrypt", controller.Decrypt)
-	r.POST("/sign", controller.Sign)
-	r.POST("/verify", controller.Verify)
+	r.POST("/encrypt", cryptoController.Encrypt)
+	r.POST("/decrypt", cryptoController.Decrypt)
+	r.POST("/sign", cryptoController.Sign)
+	r.POST("/verify", cryptoController.Verify)
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
-	r.Run(":8022")
+
+	return r
 }

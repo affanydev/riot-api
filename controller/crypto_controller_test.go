@@ -3,10 +3,10 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"riot-api/tools"
 	"testing"
 
 	"github.com/didip/tollbooth/v7"
@@ -30,15 +30,19 @@ func setUpRouter() *gin.Engine {
 	router := gin.Default()
 	router.Use(Cors)
 	router.Use(RateLimiter(rateLimiter))
+	signer := tools.NewHMACSigner([]byte(os.Getenv("SIGNING_KEY")))
+	encryptor := tools.NewBase64Encryptor()
+	cryptoController := NewCryptoController(signer, encryptor)
+	router.POST("/encrypt", cryptoController.Encrypt)
+	router.POST("/decrypt", cryptoController.Decrypt)
+	router.POST("/sign", cryptoController.Sign)
+	router.POST("/verify", cryptoController.Verify)
 	return router
 }
 
 func TestMain(m *testing.M) {
 	// Before tests
 	os.Setenv("SIGNING_KEY", SigningKeyTest)
-	if err := Init(); err != nil {
-		log.Fatalf("Failed to initialize controller: %v", err)
-	}
 
 	// Run tests
 	code := m.Run()
@@ -50,7 +54,6 @@ func TestMain(m *testing.M) {
 func TestEncrypt(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/encrypt", Encrypt)
 
 	jsonValue, _ := json.Marshal(ValidJsonPayload)
 
@@ -73,7 +76,6 @@ func TestEncrypt(t *testing.T) {
 func TestEncrypt_InvalidJSON(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/encrypt", Encrypt)
 
 	req, _ := http.NewRequest(http.MethodPost, "/encrypt", bytes.NewBuffer([]byte(InvalidJsonPayload)))
 	req.Header.Set("Content-Type", "application/json")
@@ -95,7 +97,6 @@ func TestEncrypt_InvalidJSON(t *testing.T) {
 func TestDecrypt(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/decrypt", Decrypt)
 
 	jsonValue, _ := json.Marshal(EncryptedValidJsonPayload)
 
@@ -118,7 +119,6 @@ func TestDecrypt(t *testing.T) {
 func TestDecrypt_InvalidJSON(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/decrypt", Decrypt)
 
 	req, _ := http.NewRequest(http.MethodPost, "/decrypt", bytes.NewBuffer([]byte(InvalidEncryptedJsonPayload)))
 	req.Header.Set("Content-Type", "application/json")
@@ -139,7 +139,6 @@ func TestDecrypt_InvalidJSON(t *testing.T) {
 func TestDecrypt_InvalidData(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/decrypt", Decrypt)
 
 	req, _ := http.NewRequest(http.MethodPost, "/decrypt", bytes.NewBuffer([]byte("{\"key1\": \"invalidBase64\"}")))
 	req.Header.Set("Content-Type", "application/json")
@@ -157,7 +156,6 @@ func TestDecrypt_InvalidData(t *testing.T) {
 func TestSign(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/sign", Sign)
 
 	jsonValue, _ := json.Marshal(ValidJsonPayload)
 
@@ -180,7 +178,6 @@ func TestSign(t *testing.T) {
 func TestSign_InvalidJSON(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/sign", Sign)
 
 	req, _ := http.NewRequest(http.MethodPost, "/sign", bytes.NewBuffer([]byte(InvalidJsonPayload)))
 	req.Header.Set("Content-Type", "application/json")
@@ -202,7 +199,6 @@ func TestSign_InvalidJSON(t *testing.T) {
 func TestVerify_ValidSignature(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/verify", Verify)
 
 	payload := map[string]interface{}{
 		"signature": SignatureValidJsonPayload,
@@ -222,7 +218,6 @@ func TestVerify_ValidSignature(t *testing.T) {
 func TestVerify_InvalidSignature(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/verify", Verify)
 
 	payload := map[string]interface{}{
 		"signature": "wrong-signature",
@@ -246,7 +241,6 @@ func TestVerify_InvalidSignature(t *testing.T) {
 func TestVerify_InvalidJSON(t *testing.T) {
 	// Prepare
 	router := setUpRouter()
-	router.POST("/verify", Verify)
 
 	payload := map[string]interface{}{
 		"signature": "wrong-signature",

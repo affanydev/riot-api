@@ -31,7 +31,7 @@ func normalizeValue(v interface{}) interface{} {
 
 func TestBase64Encryptor_Encrypt(t *testing.T) {
 	// Prepare
-	encryptor := &Base64Encryptor{}
+	encryptor := NewBase64Encryptor()
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": 123,
@@ -55,7 +55,7 @@ func TestBase64Encryptor_Encrypt(t *testing.T) {
 
 func TestBase64Encryptor_Decrypt(t *testing.T) {
 	// Prepare
-	encryptor := &Base64Encryptor{}
+	encryptor := NewBase64Encryptor()
 	data := map[string]interface{}{
 		"key1": "value1",
 		"key2": 123,
@@ -94,7 +94,7 @@ func TestBase64Encryptor_Decrypt(t *testing.T) {
 
 func TestBase64Encryptor_Decrypt_InvalidBase64(t *testing.T) {
 	// Prepare
-	encryptor := &Base64Encryptor{}
+	encryptor := NewBase64Encryptor()
 	invalidData := map[string]interface{}{
 		"key1": "invalidBase64",
 	}
@@ -110,7 +110,7 @@ func TestBase64Encryptor_Decrypt_InvalidBase64(t *testing.T) {
 
 func TestBase64Encryptor_Decrypt_InvalidDataType(t *testing.T) {
 	// Prepare
-	encryptor := &Base64Encryptor{}
+	encryptor := NewBase64Encryptor()
 	data := map[string]interface{}{
 		"key1": "value1",
 	}
@@ -135,7 +135,7 @@ func TestBase64Encryptor_Decrypt_InvalidDataType(t *testing.T) {
 
 func TestBase64Encryptor_Decrypt_InvalidData(t *testing.T) {
 	// Prepare
-	encryptor := &Base64Encryptor{}
+	encryptor := NewBase64Encryptor()
 	data := map[string]interface{}{
 		"key1": "e1wia2V5MVwiOiB2YWx1ZTFcIn0=",
 	}
@@ -151,7 +151,7 @@ func TestBase64Encryptor_Decrypt_InvalidData(t *testing.T) {
 
 func TestBase64Encryptor_Decryption_EmptyData(t *testing.T) {
 	// Prepare
-	encryptor := &Base64Encryptor{}
+	encryptor := NewBase64Encryptor()
 	data := map[string]interface{}{}
 
 	// Perform encryption
